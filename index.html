@@ -80,6 +80,10 @@
                 <div><label>Net m2</label><input type="number" id="e-m2"></div>
             </div>
             <div class="grid2">
+                <div><label>Bina Yaşı</label><input type="number" id="e-yas"></div>
+                <div><label>Denize Uzaklık (km)</label><input type="number" step="0.1" id="e-deniz"></div>
+            </div>
+            <div class="grid2">
                 <div><label>Bulunduğu Kat</label><input type="number" id="e-kat"></div>
                 <div><label>Toplam Kat</label><input type="number" id="e-toplam-kat"></div>
             </div>
@@ -111,6 +115,10 @@
                         <option>Kiralık</option>
                     </select>
                 </div>
+            </div>
+            <div class="grid2">
+                <div><label>Maks Bina Yaşı</label><input type="number" id="m-yas"></div>
+                <div><label>Maks Deniz Uzaklık (km)</label><input type="number" step="0.1" id="m-deniz"></div>
             </div>
             <div class="grid2">
                 <div><label>Oda Talebi</label><input type="text" id="m-oda"></div>
@@ -147,6 +155,14 @@
                         <option>Kiralık</option>
                     </select>
                 </div>
+            </div>
+            <div class="grid2">
+                <div><label>Maks Yaş</label><input type="number" id="q-yas"></div>
+                <div><label>Maks Deniz (km)</label><input type="number" step="0.1" id="q-deniz"></div>
+            </div>
+            <div class="grid2">
+                <div><label>Min. m²</label><input type="number" id="q-m2"></div>
+                <div><label>Mahalle</label><input type="text" id="q-mahalle"></div>
             </div>
             <div class="grid2">
                 <div><label>Oda Sayısı</label><input type="text" id="q-oda"></div>
@@ -200,7 +216,9 @@ function emlakEkle() {
         fiyat: parseFloat(fiyat),
         tip: document.getElementById('e-tip').value,
         oda: document.getElementById('e-oda').value,
-        m2: document.getElementById('e-m2').value,
+        m2: parseFloat(document.getElementById('e-m2').value) || 0,
+        yas: parseInt(document.getElementById('e-yas').value) || 0,
+        deniz: parseFloat(document.getElementById('e-deniz').value) || 0,
         kat: document.getElementById('e-kat').value,
         toplamKat: document.getElementById('e-toplam-kat').value,
         mahalle: document.getElementById('e-mahalle').value,
@@ -224,6 +242,8 @@ function renderEmlaklar() {
             <div style="font-size:12px; color:var(--text-sec)">📍 ${m.mahalle} | 🏠 ${m.tip}</div>
             <span class="badge">${m.oda} Oda</span> 
             <span class="badge">${m.m2} m2</span>
+            <span class="badge">Yaş: ${m.yas}</span>
+            <span class="badge">🌊 ${m.deniz} km</span>
             <span class="badge">Kat: ${m.kat}/${m.toplamKat}</span>
             ${m.vtn === 'Evet' ? '<span class="badge" style="background:#EAF3DE;color:#27500A">🛂 VTN</span>' : ''}
             ${m.ikamet === 'Evet' ? '<span class="badge" style="background:#E3F2FD;color:#0D47A1">🏠 İKAMET</span>' : ''}
@@ -242,6 +262,8 @@ function musteriKaydet() {
         tel: document.getElementById('m-tel').value,
         butce: parseFloat(document.getElementById('m-butce').value) || 0,
         tip: document.getElementById('m-tip').value,
+        yas: parseInt(document.getElementById('m-yas').value) || 99,
+        deniz: parseFloat(document.getElementById('m-deniz').value) || 99,
         oda: document.getElementById('m-oda').value,
         m2: document.getElementById('m-m2').value,
         kat: document.getElementById('m-kat').value,
@@ -264,6 +286,7 @@ function renderMusteriler() {
             <div style="font-weight:800; font-size:16px;">${m.ad}</div>
             <div style="font-size:13px;">📞 ${m.tel} | 💰 Max €${m.butce.toLocaleString()}</div>
             <div style="font-size:12px; color:#666; margin-top:5px;"><b>Talep:</b> ${m.tip} - ${m.mahalle} (${m.oda} Oda)</div>
+            <div style="font-size:11px; color:#888;">Yaş: Max ${m.yas} | Deniz: Max ${m.deniz} km</div>
             <div style="margin-top:5px;">
                 ${m.vtn === 'Evet' ? '<span class="badge">VTN Şartı</span>' : ''}
                 ${m.ikamet === 'Evet' ? '<span class="badge">İkamet Şartı</span>' : ''}
@@ -282,6 +305,10 @@ function renderEslesme() {
     const a = document.getElementById('q-akt').value;
     const o = document.getElementById('q-oda').value;
     const k = document.getElementById('q-kat').value;
+    const minM2 = parseFloat(document.getElementById('q-m2').value) || 0;
+    const mahalleSearch = document.getElementById('q-mahalle').value.toLowerCase();
+    const maxYas = parseInt(document.getElementById('q-yas').value) || Infinity;
+    const maxDeniz = parseFloat(document.getElementById('q-deniz').value) || Infinity;
 
     const s = emlaklar.filter(m => 
         m.fiyat <= b && 
@@ -290,14 +317,19 @@ function renderEslesme() {
         (v === "Hepsi" || m.vtn === v) &&
         (a === "Hepsi" || m.akt === a) &&
         (o === "" || m.oda.includes(o)) &&
-        (k === "" || m.kat == k)
+        (k === "" || m.kat == k) &&
+        (m.m2 >= minM2) &&
+        (m.yas <= maxYas) &&
+        (m.deniz <= maxDeniz) &&
+        (mahalleSearch === "" || (m.mahalle && m.mahalle.toLowerCase().includes(mahalleSearch)))
     );
 
     document.getElementById('eslesme-listesi').innerHTML = s.length ? s.map(m => `
         <div class="item-card" style="border-left-color:orange">
             <div class="item-price">€ ${m.fiyat.toLocaleString()}</div>
             <div style="font-weight:700;">${m.baslik}</div>
-            <div style="font-size:12px;">📍 ${m.mahalle} | 🏠 ${m.tip} | 🚪 ${m.oda} Oda</div>
+            <div style="font-size:12px;">📍 ${m.mahalle} | 🏠 ${m.tip} | 🚪 ${m.oda} Oda | 📐 ${m.m2} m2</div>
+            <div style="font-size:11px; color:#666; margin-top:3px;">🏗️ Yaş: ${m.yas} | 🌊 Deniz: ${m.deniz} km</div>
         </div>
     `).join('') : '<p style="text-align:center; padding:20px;">Uygun ilan bulunamadı.</p>';
 }
