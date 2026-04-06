@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Emlak Pro Takip</title>
+    <style>
+        :root {
+            --primary: #007AFF;
+            --success: #34C759;
+            --danger: #FF3B30;
+            --bg: #F2F2F7;
+            --card: #FFFFFF;
+            --text: #1C1C1E;
+            --text-sec: #8E8E93;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, system-ui, sans-serif; }
+        body { background: var(--bg); color: var(--text); padding: env(safe-area-inset-top) 15px 20px; }
+        .app { max-width: 550px; margin: 0 auto; }
+
+        .tabs { display: flex; gap: 8px; margin: 15px 0; overflow-x: auto; padding-bottom: 10px; scrollbar-width: none; }
+        .tab { padding: 10px 18px; border-radius: 12px; background: var(--card); border: 1px solid #ddd; cursor: pointer; white-space: nowrap; font-size: 13px; font-weight: 600; }
+        .tab.active { background: var(--primary); color: white; border-color: var(--primary); }
+
+        .section { display: none; }
+        .section.active { display: block; animation: fadeIn 0.3s; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        .card { background: var(--card); border-radius: 16px; padding: 18px; margin-bottom: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        h2 { font-size: 18px; margin-bottom: 15px; }
+        label { font-size: 10px; font-weight: 800; color: var(--text-sec); display: block; margin-bottom: 4px; text-transform: uppercase; }
+        input, select { width: 100%; font-size: 16px; padding: 12px; border: 1.5px solid #E5E5EA; border-radius: 12px; margin-bottom: 12px; outline: none; background: #FAFAFA; }
+        .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+        .btn { width: 100%; padding: 14px; border-radius: 12px; border: none; font-weight: 700; cursor: pointer; font-size: 14px; transition: 0.2s; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-success { background: var(--success); color: white; }
+        .btn-danger { background: #FFF1F0; color: var(--danger); font-size: 11px; margin-top: 8px; padding: 8px; }
+
+        .item-card { background: white; border-radius: 16px; padding: 16px; margin-bottom: 12px; border-left: 5px solid var(--primary); }
+        .item-price { font-size: 20px; font-weight: 800; color: var(--primary); }
+        .badge { font-size: 10px; padding: 4px 8px; background: #F2F2F7; border-radius: 6px; font-weight: 700; margin-right: 4px; display: inline-block; margin-top: 5px; color: #444; }
+    </style>
+</head>
+<body>
+
+<div class="app">
+    <div class="tabs">
+        <button class="tab active" onclick="switchTab('emlaklar', this)">🏠 Portföy</button>
+        <button class="tab" onclick="switchTab('ekle', this)">➕ Yeni Kayıt</button>
+        <button class="tab" onclick="switchTab('musteri-kayit', this)">📝 Müşteri Kayıt</button>
+        <button class="tab" onclick="switchTab('eslesme', this)">🔍 Eşleşme</button>
+        <button class="tab" onclick="switchTab('ayarlar', this)">⚙️ Ayarlar</button>
+    </div>
+
+    <div class="section active" id="tab-emlaklar">
+        <input type="text" id="f-ara" placeholder="Ara (Mahalle, Başlık)..." oninput="renderEmlaklar()">
+        <div id="emlak-listesi"></div>
+    </div>
+
+    <div class="section" id="tab-ekle">
+        <div class="card">
+            <h2>🏷️ Emlak Bilgileri</h2>
+            <label>İlan Başlığı</label><input type="text" id="e-baslik">
+            <div class="grid2">
+                <div><label>Fiyat (€)</label><input type="number" id="e-fiyat"></div>
+                <div>
+                    <label>Seçenek</label>
+                    <select id="e-tip">
+                        <option>Daire</option>
+                        <option>Arsa</option>
+                        <option>Villa</option>
+                        <option>Kiralık</option>
+                    </select>
+                </div>
+            </div>
+            <div class="grid2">
+                <div><label>Oda Sayısı</label><input type="text" id="e-oda"></div>
+                <div><label>Net m2</label><input type="number" id="e-m2"></div>
+            </div>
+            <div class="grid2">
+                <div><label>Bulunduğu Kat</label><input type="number" id="e-kat"></div>
+                <div><label>Toplam Kat</label><input type="number" id="e-toplam-kat"></div>
+            </div>
+            <label>Mahalle</label><input type="text" id="e-mahalle">
+            <div class="grid2">
+                <div><label>İkamete Uygun</label><select id="e-ikamet"><option>Hayır</option><option>Evet</option></select></div>
+                <div><label>Vatandaşlığa Uygun</label><select id="e-vtn"><option>Hayır</option><option>Evet</option></select></div>
+            </div>
+            <label>Aktivite Durumu</label><select id="e-akt"><option>Hayır</option><option>Evet</option></select>
+            <button class="btn btn-primary" onclick="emlakEkle()">Portföye Kaydet</button>
+        </div>
+    </div>
+
+    <div class="section" id="tab-musteri-kayit">
+        <div class="card">
+            <h2>👤 Müşteri Talebi</h2>
+            <div class="grid2">
+                <div><label>Ad Soyad</label><input type="text" id="m-ad"></div>
+                <div><label>Telefon</label><input type="text" id="m-tel"></div>
+            </div>
+            <div class="grid2">
+                <div><label>Bütçe (€)</label><input type="number" id="m-butce"></div>
+                <div>
+                    <label>Aradığı Tip</label>
+                    <select id="m-tip">
+                        <option>Daire</option>
+                        <option>Arsa</option>
+                        <option>Villa</option>
+                        <option>Kiralık</option>
+                    </select>
+                </div>
+            </div>
+            <div class="grid2">
+                <div><label>Oda Talebi</label><input type="text" id="m-oda"></div>
+                <div><label>Min m2</label><input type="number" id="m-m2"></div>
+            </div>
+            <div class="grid2">
+                <div><label>Tercih Kat</label><input type="number" id="m-kat"></div>
+                <div><label>Toplam Kat</label><input type="number" id="m-toplam-kat"></div>
+            </div>
+            <label>Tercih Edilen Mahalle</label><input type="text" id="m-mahalle">
+            <div class="grid2">
+                <div><label>İkamet Şartı</label><select id="m-ikamet"><option>Hayır</option><option>Evet</option></select></div>
+                <div><label>Vatandaşlık Şartı</label><select id="m-vtn"><option>Hayır</option><option>Evet</option></select></div>
+            </div>
+            <label>Aktivite Beklentisi</label><select id="m-akt"><option>Evet</option><option>Hayır</option></select>
+            <label>Özel Notlar</label><input type="text" id="m-not">
+            <button class="btn btn-success" onclick="musteriKaydet()">Müşteriyi Kaydet</button>
+        </div>
+        <div id="musteri-listesi"></div>
+    </div>
+
+    <div class="section" id="tab-eslesme">
+        <div class="card">
+            <h2>🔍 Detaylı Eşleşme</h2>
+            <div class="grid2">
+                <div><label>Maks. Bütçe</label><input type="number" id="q-butce"></div>
+                <div>
+                    <label>Tip</label>
+                    <select id="q-tip">
+                        <option value="Hepsi">Hepsi</option>
+                        <option>Daire</option>
+                        <option>Arsa</option>
+                        <option>Villa</option>
+                        <option>Kiralık</option>
+                    </select>
+                </div>
+            </div>
+            <div class="grid2">
+                <div><label>Oda Sayısı</label><input type="text" id="q-oda"></div>
+                <div><label>Kat</label><input type="number" id="q-kat"></div>
+            </div>
+            <div class="grid2">
+                <div><label>İkamet Uygun</label><select id="q-ikamet"><option value="Hepsi">Hepsi</option><option value="Evet">Evet</option></select></div>
+                <div><label>Vatandaşlık Uygun</label><select id="q-vtn"><option value="Hepsi">Hepsi</option><option value="Evet">Evet</option></select></div>
+            </div>
+            <div><label>Aktivite</label><select id="q-akt"><option value="Hepsi">Hepsi</option><option value="Evet">Evet</option></select></div>
+            <button class="btn btn-primary" onclick="renderEslesme()" style="margin-top:10px;">Eşleşenleri Listele</button>
+        </div>
+        <div id="eslesme-listesi"></div>
+    </div>
+
+    <div class="section" id="tab-ayarlar">
+        <div class="card">
+            <button class="btn btn-primary" onclick="disaAktar()">📥 Verileri Yedekle</button>
+            <div style="margin-top:20px; border-top:1px solid #eee; padding-top:20px;">
+                <input type="file" id="importFile" accept=".json">
+                <button class="btn btn-outline" onclick="iceAktar()" style="border:1px solid #ccc; margin-top:10px; width:100%; padding:10px; border-radius:10px;">📤 Yedeği Yükle</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let emlaklar = JSON.parse(localStorage.getItem('e_veriler')) || [];
+let musteriler = JSON.parse(localStorage.getItem('m_veriler')) || [];
+
+function verileriKaydet() {
+    localStorage.setItem('e_veriler', JSON.stringify(emlaklar));
+    localStorage.setItem('m_veriler', JSON.stringify(musteriler));
+}
+
+function switchTab(tabId, btn) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-' + tabId).classList.add('active');
+    if(tabId === 'emlaklar') renderEmlaklar();
+    if(tabId === 'musteri-kayit') renderMusteriler();
+}
+
+function emlakEkle() {
+    const fiyat = document.getElementById('e-fiyat').value;
+    if(!fiyat) return alert('Fiyat giriniz!');
+    emlaklar.push({
+        id: Date.now(),
+        baslik: document.getElementById('e-baslik').value,
+        fiyat: parseFloat(fiyat),
+        tip: document.getElementById('e-tip').value,
+        oda: document.getElementById('e-oda').value,
+        m2: document.getElementById('e-m2').value,
+        kat: document.getElementById('e-kat').value,
+        toplamKat: document.getElementById('e-toplam-kat').value,
+        mahalle: document.getElementById('e-mahalle').value,
+        ikamet: document.getElementById('e-ikamet').value,
+        vtn: document.getElementById('e-vtn').value,
+        akt: document.getElementById('e-akt').value
+    });
+    verileriKaydet();
+    alert('Portföy eklendi.');
+    switchTab('emlaklar', document.querySelectorAll('.tab')[0]);
+}
+
+function renderEmlaklar() {
+    const ara = document.getElementById('f-ara').value.toLowerCase();
+    const el = document.getElementById('emlak-listesi');
+    const liste = emlaklar.filter(m => (m.baslik + m.mahalle).toLowerCase().includes(ara));
+    el.innerHTML = liste.map(m => `
+        <div class="item-card">
+            <div class="item-price">€ ${m.fiyat.toLocaleString('de-DE')}</div>
+            <div style="font-weight:700;">${m.baslik}</div>
+            <div style="font-size:12px; color:var(--text-sec)">📍 ${m.mahalle} | 🏠 ${m.tip}</div>
+            <span class="badge">${m.oda} Oda</span> 
+            <span class="badge">${m.m2} m2</span>
+            <span class="badge">Kat: ${m.kat}/${m.toplamKat}</span>
+            ${m.vtn === 'Evet' ? '<span class="badge" style="background:#EAF3DE;color:#27500A">🛂 VTN</span>' : ''}
+            ${m.ikamet === 'Evet' ? '<span class="badge" style="background:#E3F2FD;color:#0D47A1">🏠 İKAMET</span>' : ''}
+            ${m.akt === 'Evet' ? '<span class="badge" style="background:#FFF9C4;color:#F57F17">⚡ AKTİF</span>' : ''}
+            <button class="btn btn-danger" onclick="emlakSil(${m.id})">Sil</button>
+        </div>
+    `).reverse().join('');
+}
+
+function musteriKaydet() {
+    const ad = document.getElementById('m-ad').value;
+    if(!ad) return alert('İsim giriniz!');
+    musteriler.push({
+        id: Date.now(),
+        ad,
+        tel: document.getElementById('m-tel').value,
+        butce: parseFloat(document.getElementById('m-butce').value) || 0,
+        tip: document.getElementById('m-tip').value,
+        oda: document.getElementById('m-oda').value,
+        m2: document.getElementById('m-m2').value,
+        kat: document.getElementById('m-kat').value,
+        toplamKat: document.getElementById('m-toplam-kat').value,
+        ikamet: document.getElementById('m-ikamet').value,
+        vtn: document.getElementById('m-vtn').value,
+        akt: document.getElementById('m-akt').value,
+        mahalle: document.getElementById('m-mahalle').value,
+        not: document.getElementById('m-not').value
+    });
+    verileriKaydet();
+    alert('Müşteri kaydedildi.');
+    renderMusteriler();
+}
+
+function renderMusteriler() {
+    const el = document.getElementById('musteri-listesi');
+    el.innerHTML = musteriler.map(m => `
+        <div class="item-card" style="border-left-color:var(--success)">
+            <div style="font-weight:800; font-size:16px;">${m.ad}</div>
+            <div style="font-size:13px;">📞 ${m.tel} | 💰 Max €${m.butce.toLocaleString()}</div>
+            <div style="font-size:12px; color:#666; margin-top:5px;"><b>Talep:</b> ${m.tip} - ${m.mahalle} (${m.oda} Oda)</div>
+            <div style="margin-top:5px;">
+                ${m.vtn === 'Evet' ? '<span class="badge">VTN Şartı</span>' : ''}
+                ${m.ikamet === 'Evet' ? '<span class="badge">İkamet Şartı</span>' : ''}
+                ${m.akt === 'Evet' ? '<span class="badge">Aktivite Bekl.</span>' : ''}
+            </div>
+            <button class="btn btn-danger" onclick="musteriSil(${m.id})">Talebi Sil</button>
+        </div>
+    `).reverse().join('');
+}
+
+function renderEslesme() {
+    const b = parseFloat(document.getElementById('q-butce').value) || Infinity;
+    const t = document.getElementById('q-tip').value;
+    const i = document.getElementById('q-ikamet').value;
+    const v = document.getElementById('q-vtn').value;
+    const a = document.getElementById('q-akt').value;
+    const o = document.getElementById('q-oda').value;
+    const k = document.getElementById('q-kat').value;
+
+    const s = emlaklar.filter(m => 
+        m.fiyat <= b && 
+        (t === "Hepsi" || m.tip === t) &&
+        (i === "Hepsi" || m.ikamet === i) &&
+        (v === "Hepsi" || m.vtn === v) &&
+        (a === "Hepsi" || m.akt === a) &&
+        (o === "" || m.oda.includes(o)) &&
+        (k === "" || m.kat == k)
+    );
+
+    document.getElementById('eslesme-listesi').innerHTML = s.length ? s.map(m => `
+        <div class="item-card" style="border-left-color:orange">
+            <div class="item-price">€ ${m.fiyat.toLocaleString()}</div>
+            <div style="font-weight:700;">${m.baslik}</div>
+            <div style="font-size:12px;">📍 ${m.mahalle} | 🏠 ${m.tip} | 🚪 ${m.oda} Oda</div>
+        </div>
+    `).join('') : '<p style="text-align:center; padding:20px;">Uygun ilan bulunamadı.</p>';
+}
+
+function emlakSil(id) { if(confirm('Silinsin mi?')) { emlaklar = emlaklar.filter(m => m.id !== id); verileriKaydet(); renderEmlaklar(); } }
+function musteriSil(id) { if(confirm('Silinsin mi?')) { musteriler = musteriler.filter(m => m.id !== id); verileriKaydet(); renderMusteriler(); } }
+
+function disaAktar() {
+    const blob = new Blob([JSON.stringify({emlaklar, musteriler})], {type: "application/json"});
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = "emlak_yedek.json"; a.click();
+}
+
+function iceAktar() {
+    const file = document.getElementById('importFile').files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const data = JSON.parse(e.target.result);
+        emlaklar = data.emlaklar || [];
+        musteriler = data.musteriler || [];
+        verileriKaydet(); location.reload();
+    };
+    reader.readAsText(file);
+}
+
+renderEmlaklar();
+</script>
+</body>
+</html>
